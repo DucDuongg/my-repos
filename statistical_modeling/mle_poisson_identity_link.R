@@ -82,7 +82,8 @@ while(TRUE){
 # deviance of current model
 D = CalculateDeviance(X, y, current_b)
 
-# chi squared test of 
+# chi squared test of deviance to verify goodness-of-fit
+pchisq(D, nrow(X) - length(current_b), lower.tail = FALSE )
 
 print(current_b)
 print(iterated_step)
