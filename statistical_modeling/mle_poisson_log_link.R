@@ -120,7 +120,9 @@ while(TRUE){
 D = CalculateDeviance(X, y, current_b)
 
 # chi squared test of deviance to verify goodness-of-fit
-pchisq(D, nrow(X) - length(current_b), lower.tail = FALSE )
+qchisq(0.05, df = nrow(X) - length(current_b), lower.tail = FALSE)
+
+# thay D < chi-square voi bac tu do n-p, ket luan mo hinh phu hop
 
 print(current_b)
 print(iterated_step)
