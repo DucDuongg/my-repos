@@ -57,12 +57,12 @@ CalculateDeviance = function(X, y, b){
   
   D = 0
   for( i in 1:length(y) ){
-    y_hat = b[1]*X[i,1] + b[2]*X[i,2]
+    mu_hat= exp(b[1]*X[i,1] + b[2]*X[i,2])
     
-    cat(y[i], " --- ", y_hat)
+    cat(y[i], " --- ", mu_hat)
     cat("\n")
     
-    D = D + ( y[i] * log(y[i] / y_hat) )
+    D = D + ( y[i] * log(y[i] / mu_hat) )
   }
   
   return( 2*D )
