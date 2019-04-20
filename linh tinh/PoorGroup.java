@@ -2,8 +2,10 @@ package com.examplefoobar.utils;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashSet;
 
 /**
@@ -23,6 +25,7 @@ public class PoorGroup
     private HashSet<Member> members;
     private boolean shouldStop;
 
+    private static final int MULTIPLICATION_FACTOR = 10;
     class Member
     {
         // change access level from package to private
@@ -84,21 +87,89 @@ public class PoorGroup
 
     public String getMembersAsStringWith10xAge()
     {
-        String buf = "";
+        StringBuilder membersStringBuilder = new StringBuilder();
+
         for (Member member : members)
         {
-            Integer age = member.getAge();
+            int ageMultiplied = member.getAge() * MULTIPLICATION_FACTOR;
+            String memberId = member.getMemberId();
+
             // Don't ask the reason why `age` should be multiplied ;)
-            age *= 10;
-            buf += String.format("memberId=%s, age=%d¥n", member.getMemberId(), age);
+            membersStringBuilder.append("memberId=" + memberId + ", age=" + ageMultiplied + "\n");
         }
-        return buf;
+        return membersStringBuilder.toString();
     }
 
     /**
      * Run a background task that writes a member list to specified files 10 times in background thread
      * so that it doesn't block the caller's thread.
      */
+
+    public void my_startLoggingMemberList10Times(final String outputFilePrimary, final String outputFileSecondary){
+        new Thread(new Runnable() {
+            @Override
+            public void run()
+            {
+                int i = 0;
+                while (!shouldStop)
+                {
+                    if (i++ >= 10)
+                        break;
+
+                    // use try-resources
+                    try (FileWriter writerPrimary = new FileWriter(outputFilePrimary);
+                         BufferedWriter bufferPrimary = new BufferedWriter(writerPrimary);
+
+                         FileWriter writerSecondary = new FileWriter(outputFileSecondary);
+                         BufferedWriter bufferSecondary = new BufferedWriter(writerSecondary) ){
+
+                        bufferPrimary.write( PoorGroup.this.getMembersAsStringWith10xAge() );
+                        bufferSecondary.write( PoorGroup.this.getMembersAsStringWith10xAge() );
+
+                    } catch (IOException e){
+                        System.out.println("IOEx");
+                    }
+
+                    ///////////////
+                    FileWriter writerPrimary   = null;
+                    FileWriter writerSecondary = null;
+
+                    try {
+                        writerPrimary = new FileWriter(new File(outputFilePrimary));
+                        writerPrimary.append(PoorGroup.this.getMembersAsStringWith10xAge());
+
+                        writerSecondary = new FileWriter(new File(outputFileSecondary));
+                        writerSecondary.append(PoorGroup.this.getMembersAsStringWith10xAge());
+                    }
+                    catch (Exception e) {
+                        throw new RuntimeException("Unexpected error occurred. Please check these file names. outputFilePrimary="
+                                + outputFilePrimary + ", outputFileSecondary=" + outputFileSecondary);
+                    }
+                    finally {
+                        try {
+                            if (writerPrimary != null)
+                                writerPrimary.close();
+
+                            if (writerSecondary != null)
+                                writerSecondary.close();
+                        }
+                        catch (Exception e) {
+                            // Do nothing since there isn't anything we can do here, right?
+                            System.out.println("Close file exception, error: " + e.getMessage());
+                        }
+                    }
+
+                    try {
+                        Thread.sleep(1000);
+                    }
+                    catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).start();
+    }
+
     public void startLoggingMemberList10Times(final String outputFilePrimary, final String outputFileSecondary)
     {
         new Thread(new Runnable() {
@@ -111,14 +182,15 @@ public class PoorGroup
                     if (i++ >= 10)
                         break;
 
-                    FileWriter writer0 = null;
-                    FileWriter writer1 = null;
-                    try {
-                        writer0 = new FileWriter(new File(outputFilePrimary));
-                        writer0.append(PoorGroup.this.getMembersAsStringWith10xAge());
+                    FileWriter writerPrimary   = null;
+                    FileWriter writerSecondary = null;
 
-                        writer1 = new FileWriter(new File(outputFileSecondary));
-                        writer1.append(PoorGroup.this.getMembersAsStringWith10xAge());
+                    try {
+                        writerPrimary = new FileWriter(new File(outputFilePrimary));
+                        writerPrimary.append(PoorGroup.this.getMembersAsStringWith10xAge());
+
+                        writerSecondary = new FileWriter(new File(outputFileSecondary));
+                        writerSecondary.append(PoorGroup.this.getMembersAsStringWith10xAge());
                     }
                     catch (Exception e) {
                         throw new RuntimeException("Unexpected error occurred. Please check these file names. outputFilePrimary="
@@ -126,14 +198,15 @@ public class PoorGroup
                     }
                     finally {
                         try {
-                            if (writer0 != null)
-                                writer0.close();
+                            if (writerPrimary != null)
+                                writerPrimary.close();
 
-                            if (writer1 != null)
-                                writer1.close();
+                            if (writerSecondary != null)
+                                writerSecondary.close();
                         }
                         catch (Exception e) {
                             // Do nothing since there isn't anything we can do here, right?
+                            System.out.println("Close file exception, error: " + e.getMessage());
                         }
                     }
 
